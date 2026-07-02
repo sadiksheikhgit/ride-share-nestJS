@@ -4,59 +4,39 @@ import {
   Get,
   Param,
   Post,
-  Res,
+  Put,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { CreateAdminDto } from './dto/create-admin.dto';
 import { AdminService } from './admin.service';
-import { AdminRole } from './admin-role.model';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage, MulterError } from 'multer';
-import type { Response } from 'express';
+import { AdminParams } from './admin-profile.params';
+import { ProfilePictureValidationPipe } from '../common/pipes/profile-picture-validation.pipe';
+import { UploadProfilePictureResponseDto } from '../common/dto/upload-profile-picture-response.dto';
 
 @Controller('/v1/api/admin')
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
-  @Post('createAdmin')
-  @UseInterceptors(
-    FileInterceptor('profilePictureUrl', {
-      fileFilter: (req, file, cb) => {
-        if (file.originalname.match(/^.*\.(jpg|jpeg|png|gif)$/)) {
-          cb(null, true);
-        } else {
-          cb(new MulterError('LIMIT_UNEXPECTED_FILE', 'image'), false);
-        }
-      },
-      limits: { fileSize: 50000 },
-      storage: diskStorage({
-        destination: './uploads',
-        filename: function (req, file, cb) {
-          cb(null, Date.now() + file.originalname);
-        },
-      }),
-    }),
-  )
-  public createAdmin(
+  @Post('/create')
+  public async createAdmin(
     @Body() createAdminDto: CreateAdminDto,
-    @UploadedFile() profilePictureUrl: Express.Multer.File,
-  ): object {
-    // console.log(profilePictureUrl);
-    createAdminDto.profilePictureUrl = profilePictureUrl.filename;
+  ): Promise<object> {
     return this.adminService.createAdmin(createAdminDto);
   }
 
-  @Get('adminProfile/:role')
-  public adminProfileByRole(@Param() adminRole: AdminRole): object {
-    return this.adminService.adminProfileByRole(adminRole);
+  @Put('/:id/profile-picture')
+  @UseInterceptors(FileInterceptor('file'))
+  public async uploadProfilePicture(
+    @Param('id') id: string,
+    @UploadedFile(new ProfilePictureValidationPipe()) file: Express.Multer.File,
+  ): Promise<UploadProfilePictureResponseDto> {
+    return this.adminService.uploadProfilePicture(id, file);
   }
 
-  @Get('profilePicture/:filename')
-  public getProfilePicture(
-    @Param('filename') filename: string,
-    @Res() res: Response,
-  ): void {
-    res.sendFile(filename, { root: './uploads' });
+  @Get('/profile/:role')
+  public adminProfileByRole(@Param() adminRole: AdminParams): object {
+    return this.adminService.adminProfileByRole(adminRole);
   }
 }

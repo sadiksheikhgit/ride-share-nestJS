@@ -6,10 +6,32 @@ import { DriverModule } from './entities/driver/driver.module';
 import { LocationModule } from './entities/location/location.module';
 import { RideModule } from './entities/ride/ride.module';
 import { VehicleModule } from './entities/vehicle/vehicle.module';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule } from '@nestjs/config';
+import { AdminModule } from './entities/admin/admin.module';
 
 @Module({
-  imports: [RiderModule, DriverModule, LocationModule, RideModule, VehicleModule],
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    TypeOrmModule.forRoot({
+      // later validate with Joi
+      type: 'postgres',
+      host: process.env.DB_HOST,
+      port: parseInt(process.env.DB_PORT ?? '6677'),
+      username: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_DATABASE,
+      autoLoadEntities: true,
+      synchronize: true,
+    }),
+    RiderModule,
+    DriverModule,
+    LocationModule,
+    RideModule,
+    VehicleModule,
+    AdminModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule { }
+export class AppModule {}
