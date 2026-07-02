@@ -1,13 +1,46 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Put,
+  Query,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { RiderService } from './rider.service';
+import { CreateRiderDto } from './dto/create-rider.dto';
+import { UploadProfilePictureResponseDto } from '../common/dto/upload-profile-picture-response.dto';
+import { ProfilePictureValidationPipe } from '../common/pipes/profile-picture-validation.pipe';
+import { Rider } from './rider.entity';
 
-@Controller('/v1/api/riders')
+@Controller('/v1/api/rider')
 export class RiderController {
   constructor(private readonly riderService: RiderService) {}
 
   @Get()
   public getRiders(): object {
     return this.riderService.getRiders();
+  }
+
+  @Get('/search')
+  public searchRiders(
+    @Query('id') id: string,
+    @Query('name') name: string,
+  ): object {
+    return this.riderService.searchRiderByIdAndName(id, name);
+  }
+
+  @Get('/ratings')
+  public getRiderRatings(@Param('id') id: string): object {
+    return this.riderService.getRiderRatings(id);
+  }
+
+  @Get('/profile/:id')
+  public getRiderProfileById(@Param('id') id: string): object {
+    return this.riderService.getRiderProfileById(id);
   }
 
   @Get('/:id')
@@ -35,21 +68,19 @@ export class RiderController {
     return this.riderService.getSavedPlacesById(id);
   }
 
-  @Get('/search')
-  public searchRiders(
-    @Query('id') id: string,
-    @Query('name') name: string,
-  ): object {
-    return this.riderService.searchRiderByIdAndName(id, name);
+  @Post('/create')
+  public async createRider(
+    @Body() createRiderDto: CreateRiderDto,
+  ): Promise<Rider> {
+    return this.riderService.createRider(createRiderDto);
   }
 
-  @Get('/ratings')
-  public getRiderRatings(@Param('id') id: string): object {
-    return this.riderService.getRiderRatings(id);
-  }
-
-  @Get('/profile/:id')
-  public getRiderProfileById(@Param('id') id: string): object {
-    return this.riderService.getRiderProfileById(id);
+  @Put('/:id/profile-picture')
+  @UseInterceptors(FileInterceptor('file'))
+  public async uploadProfilePicture(
+    @Param('id') id: string,
+    @UploadedFile(new ProfilePictureValidationPipe()) file: Express.Multer.File,
+  ): Promise<UploadProfilePictureResponseDto> {
+    return this.riderService.uploadProfilePicture(id, file);
   }
 }
