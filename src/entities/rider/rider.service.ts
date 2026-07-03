@@ -6,6 +6,7 @@ import { CreateRiderDto } from './dto/create-rider.dto';
 import { UploadProfilePictureResponseDto } from '../common/dto/upload-profile-picture-response.dto';
 import { ProfilePictureService } from '../common/profile-picture/profile-picture.service';
 import * as bcrypt from 'bcrypt';
+import { PaginationParams } from '../common/pagination/pagination.params';
 
 @Injectable()
 export class RiderService {
@@ -15,8 +16,13 @@ export class RiderService {
     private readonly profilePictureService: ProfilePictureService,
   ) {}
 
-  public getRiders(): object {
-    return { id: 1, name: `Shifat`, longitude: 242, langtitude: 450 };
+  public async getAllRiders(
+    pagination: PaginationParams,
+  ): Promise<[Rider[], number]> {
+    return await this.riderRepository.findAndCount({
+      skip: pagination.offset,
+      take: pagination.limit,
+    });
   }
 
   public getRiderById(id: string): object {

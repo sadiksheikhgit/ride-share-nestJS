@@ -15,14 +15,29 @@ import { CreateRiderDto } from './dto/create-rider.dto';
 import { UploadProfilePictureResponseDto } from '../common/dto/upload-profile-picture-response.dto';
 import { ProfilePictureValidationPipe } from '../common/pipes/profile-picture-validation.pipe';
 import { Rider } from './rider.entity';
+// import { FindRiderParams } from './param/find-rider.params';
+import { PaginationParams } from '../common/pagination/pagination.params';
+import { PaginationResponse } from '../common/pagination/pagination.response';
 
 @Controller('/v1/api/rider')
 export class RiderController {
   constructor(private readonly riderService: RiderService) {}
 
   @Get()
-  public getRiders(): object {
-    return this.riderService.getRiders();
+  public async getAllRiders(
+    // @Query() filter: FindRiderParams,
+    @Query() pagination: PaginationParams,
+  ): Promise<PaginationResponse<Rider>> {
+    const [items, count] = await this.riderService.getAllRiders(pagination);
+
+    return {
+      data: items,
+      meta: {
+        total: count,
+        limit: pagination.limit,
+        offset: pagination.offset,
+      },
+    };
   }
 
   @Get('/search')
